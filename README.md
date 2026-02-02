@@ -21,15 +21,15 @@ Claude Code 插件商店 - 自定义插件集合。
 添加市场后，可以安装单个插件：
 
 ```
-claude plugin install browser-automation@cc-plugins
-claude plugin install cloudless-service@cc-plugins
+claude plugin install tools@cc-plugins
+claude plugin install cloudless@cc-plugins
 ```
 
 或使用斜杠命令：
 
 ```
-/plugin install browser-automation@cc-plugins
-/plugin install cloudless-service@cc-plugins
+/plugin install tools@cc-plugins
+/plugin install cloudless@cc-plugins
 ```
 
 ## 更新插件
@@ -37,8 +37,8 @@ claude plugin install cloudless-service@cc-plugins
 当插件有新版本时，可以更新已安装的插件：
 
 ```
-claude plugin update browser-automation@cc-plugins
-claude plugin update cloudless-service@cc-plugins
+claude plugin update tools@cc-plugins
+claude plugin update cloudless@cc-plugins
 ```
 
 或更新所有插件：
@@ -50,15 +50,15 @@ claude plugin update --all
 或使用斜杠命令：
 
 ```
-/plugin update browser-automation@cc-plugins
-/plugin update cloudless-service@cc-plugins
+/plugin update tools@cc-plugins
+/plugin update cloudless@cc-plugins
 ```
 
 ## 插件列表
 
-### browser-automation
+### tools
 
-浏览器自动化测试和交互工具包。
+工具集合插件。
 
 **功能**：
 - 网页自动化操作
@@ -83,9 +83,9 @@ claude plugin update --all
 
 ---
 
-### cloudless-service
+### cloudless
 
-Cloudless 微服务框架服务开发指南。
+Cloudless 微服务框架开发指南。
 
 **功能**：
 - 使用 @Service/@Method 注解创建服务
@@ -96,7 +96,7 @@ Cloudless 微服务框架服务开发指南。
 
 **斜杠命令**：
 ```
-/cloudless-service 开发需求描述
+/cloudless 开发需求描述
 ```
 
 **使用方式**：

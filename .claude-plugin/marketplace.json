@@ -11,15 +11,15 @@
   },
   "plugins": [
     {
-      "name": "browser-automation",
+      "name": "tools",
       "description": "浏览器自动化测试和交互工具包。支持网页自动化、表单填写、UI 验证、截图捕获、日志记录和网络请求监控。",
-      "source": "./plugins/browser-automation",
-      "mcpServers": "./plugins/browser-automation/.mcp.json"
+      "source": "./plugins/tools",
+      "mcpServers": "./plugins/tools/.mcp.json"
     },
     {
-      "name": "cloudless-service",
+      "name": "cloudless",
       "description": "Cloudless 微服务框架服务开发指南。使用 @Service/@Method 注解创建服务、调用项目工具类（C.CONFIG、C.JSON、C.TIME、C.FILE、C.CACHE、C.MQ 等）、MainDB 数据库操作、时序数据库操作、文件上传下载等。",
-      "source": "./plugins/cloudless-service"
+      "source": "./plugins/cloudless"
     }
   ]
 }
