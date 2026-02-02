@@ -1,0 +1,6 @@
+{
+  "screenshot": {
+    "default_dir": "~/tmp",
+    "description": "浏览器自动化技能默认截图保存目录"
+  }
+}

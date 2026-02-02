@@ -11,7 +11,7 @@ Claude Code 插件商店 - 自定义插件集合。
 在 Claude Code 中运行以下命令添加此市场：
 
 ```
-/plugin marketplace add <仓库地址>
+/plugin marketplace add https://github.com/Ch-msm/cc-plugins
 ```
 
 ## 插件列表
