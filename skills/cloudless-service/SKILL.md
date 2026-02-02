@@ -1,6 +1,7 @@
 ---
 name: cloudless-service
 description: Cloudless微服务框架服务开发指南。使用此技能创建和实现服务接口，包括使用@Service/@Method注解创建服务、调用项目工具类（C.CONFIG、C.JSON、C.TIME、C.FILE、C.CACHE、C.MQ等）、MainDB数据库操作、时序数据库操作、文件上传下载等。当用户请求创建新服务、实现HTTP接口、CRUD操作、或需要使用cloudless-common工具类时触发。
+user_invocable: true
 ---
 
 # Cloudless Service 开发指南

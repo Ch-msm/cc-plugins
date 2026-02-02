@@ -2,6 +2,7 @@
 name: browser-automation
 description: 浏览器自动化测试和交互工具包，支持网页自动化、表单填写、UI 验证、截图捕获、日志记录和网络请求监控。当 Claude 需要：(1) 自动化测试 web 应用功能 (2) 验证前端 UI 行为 (3) 填写和提交 web 表单 (4) 捕获浏览器截图 (5) 监控网络请求和响应 (6) 调试 JavaScript 错误 (7) 提取网页数据时使用。
 license: MIT
+user_invocable: true
 ---
 
 # Browser Automation
