@@ -32,6 +32,28 @@ claude plugin install cloudless-service@cc-plugins
 /plugin install cloudless-service@cc-plugins
 ```
 
+## 更新插件
+
+当插件有新版本时，可以更新已安装的插件：
+
+```
+claude plugin update browser-automation@cc-plugins
+claude plugin update cloudless-service@cc-plugins
+```
+
+或更新所有插件：
+
+```
+claude plugin update --all
+```
+
+或使用斜杠命令：
+
+```
+/plugin update browser-automation@cc-plugins
+/plugin update cloudless-service@cc-plugins
+```
+
 ## 插件列表
 
 ### browser-automation
