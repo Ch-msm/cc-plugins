@@ -1,10 +1,10 @@
 # CC Plugins
 
-Claude Code 插件商店 - 梅思铭的个人自定义插件集合。
+Claude Code 插件商店 - 自定义插件集合。
 
 ## 关于
 
-这是个人自定义的 Claude Code 插件市场，包含个人开发的技能和插件。
+这是一个自定义的 Claude Code 插件市场，包含各种技能和插件。
 
 ## 安装
 
