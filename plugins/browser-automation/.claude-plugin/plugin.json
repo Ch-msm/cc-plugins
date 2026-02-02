@@ -4,5 +4,11 @@
   "version": "1.0.0",
   "author": {
     "name": "梅思铭"
+  },
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
   }
 }
