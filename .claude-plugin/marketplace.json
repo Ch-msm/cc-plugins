@@ -1,0 +1,12 @@
+{
+  "name": "cc-plugins",
+  "owner": {
+    "name": "梅思铭",
+    "email": "meism@cc-plugins"
+  },
+  "metadata": {
+    "description": "Claude Code 插件商店 - 个人自定义插件集合",
+    "version": "1.0.0"
+  },
+  "plugins": []
+}
