@@ -1,26 +1,10 @@
 ---
 description: 浏览器自动化测试和交互工具包
+argument-hint: 自动化需求描述
 ---
 
-# Browser Automation
+使用 browser-automation 技能完成浏览器自动化任务。
 
-浏览器自动化工具，基于 Chrome DevTools MCP。
+用户需求：$ARGUMENTS
 
-## 基本工作流程
-
-`navigate_page → take_snapshot → 交互操作 → 验证结果`
-
-### 核心原则
-
-uid 来自快照，每次页面变化后必须重新 `take_snapshot`
-
-## 支持的场景
-
-- 用户故事验证
-- 搜索和数据提取
-- 表单自动填写
-- 登录认证
-- 数据抓取
-- 错误调试
-- 设备模拟
-- AI 视觉分析
+根据用户提供的参数执行相应的浏览器操作。
