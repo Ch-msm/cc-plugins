@@ -1,143 +1,96 @@
 ---
 name: cloudless-service
-description: Cloudless微服务框架服务开发指南。使用此技能创建和实现服务接口，包括使用@Service/@Method注解创建服务、调用项目工具类（C.CONFIG、C.JSON、C.TIME、C.FILE、C.CACHE、C.MQ等）、MainDB数据库操作、时序数据库操作、文件上传下载等。当用户请求创建新服务、实现HTTP接口、CRUD操作、或需要使用cloudless-common工具类时触发。
-user_invocable: true
+description: Cloudless common 框架下的 Java 微服务开发与排障指南。用于创建、修改和修正 Service、表实体、Search/DTO/View、CRUD、分页、导入导出、缓存消息、订阅消息、内部服务调用、启动配置与数据库操作；当用户提到 cloudless/common、@Service、@Method、MainDB、C 工具集、路由、鉴权、参数声明、上下文等问题时使用。
 ---
 
 # Cloudless Service 开发指南
 
-## 快速开始
+## 适用场景
 
-服务开发核心步骤：
-1. 创建服务类，继承`AbstractService`，使用`@Service`注解
-2. 声明`MainDB`实例进行数据库操作
-3. 重写`init()`方法初始化数据库表
-4. 使用`@Method`注解注册方法
-5. 通过`C`类访问工具类
+- 创建新的 Cloudless 服务类
+- 实现 CRUD、分页、导入导出、内部服务调用
+- 修正 `@Method`、`@Parameter`、`@ReturnData` 使用错误
+- 排查路由、鉴权、上下文、配置加载和服务启动问题
 
-## 基础服务结构
+## 推荐阅读顺序
+
+1. [项目结构](references/project-structure.md)
+2. [运行时、路由与鉴权](references/runtime-routing-auth.md)
+3. [注解与接口声明](references/method-annotation.md)
+4. [实体定义](references/entity-definition.md)
+5. [数据传输对象](references/data-transfer-objects.md)
+6. [数据库操作](references/database-operations.md)
+7. [常用工具](references/common-tools.md)
+8. [配置系统](references/configuration.md)
+9. [文件与时间](references/file-time-operations.md)
+10. [缓存消息](references/cache-mq-operations.md)
+11. [消息订阅](references/subscribe-message.md)
+12. [内部服务](references/interior-services.md)
+13. [异常处理](references/exception-response.md)
+14. [枚举与常量](references/enums-constants.md)
+
+## 核心规则
+
+1. 服务类必须放在业务根包的 `service` 包下，类名必须以 `Service` 结尾，并继承 `AbstractService`。
+2. `service`、`entity.param`、`entity.table`、`entity.view` 都允许按业务域继续拆多层包；只有 `service` 子包层级会参与路由生成。
+3. URL 不是由 `@Service.value` 决定，而是由服务所在包、类名和方法名生成。
+4. `@Method.nature` 默认值是 `MethodNature.CONTROLLED`，不是 `PUBLIC`。
+5. 单个实体参数可以直接声明；多个参数、基础类型参数、字符串参数、集合参数必须逐个添加 `@Parameter`，且接口参数总数不能超过 4 个。
+6. 返回值如果是 `String`、基础类型、`BigDecimal`、集合，必须添加 `@ReturnData`；返回 `DataList<T>` 时也应写 `@ReturnData(type = T.class)`。
+7. `sensitiveData` 是布尔值。设置为 `true` 时，框架会隐藏整段入参日志，不支持“按字段脱敏”。
+8. 表实体类名优先直接使用业务名本身，例如 `User`、`Order`，不要机械追加 `Entity` 后缀。
+9. 接口参数和返回值优先复用 `entity.table` 下的表实体；只有结构不匹配时，才定义 `entity.param` 或 `entity.view`。
+10. 当参数实体或视图实体只是比表实体多几个字段时，优先继承对应表实体再补充字段，避免重复定义相同字段。
+11. `Search`、`BaseSearch`、各种请求 DTO / 响应 DTO 都是业务项目自己定义的类，不是 `common` 内置类型。
+12. `context()` 只能在当前请求线程中使用，不要在线程池任务或异步回调里直接读取。
+13. `Config.load(...)` 需要在启动类中显式调用。
+14. 作者信息统一写 `梅思铭`，注释和接口说明统一使用中文。
+
+## 最小示例
 
 ```java
-@Service(value = "服务名称", author = "梅思铭", date = "2025-01-08")
-public class YourService extends AbstractService {
+@Service(value = "用户管理", author = "梅思铭", date = "2026-03-09", module = "基础资料")
+public class UserService extends AbstractService {
 
-    private static final MainDB<YourEntity> DB = new MainDB<>(YourEntity.class);
+    private static final MainDB<User> DB = new MainDB<>(User.class);
 
     @Override
     public void init() {
         DB.use().createTable();
     }
 
-    @Method(value = "方法说明", status = MethodStatus.COMPLETE)
-    public void yourMethod() {
-        // 使用C类工具
-        C.CONFIG.get("key");
-        C.JSON.toJson(obj);
-        C.FILE.upload(file);
-        C.CACHE.set("key", value);
-        // MainDB操作
-        DB.use().insert(entity);
+    @Method(value = "分页查询", status = MethodStatus.COMPLETE)
+    @ReturnData(type = User.class)
+    public DataList<User> find(UserSearch search) {
+        var db = DB.use()
+            .eq(User::getDepartmentId, search.getDepartmentId(),
+                C.OBJECT.isEmpty(search.getDepartmentId()))
+            .iLike(List.of(User::getName), "%" + search.getKeyword() + "%",
+                C.OBJECT.isEmpty(search.getKeyword()));
+
+        var result = new DataList<User>();
+        if (search.getPageNo() != -1) {
+            result.setTotal(db.count());
+        }
+        result.setList(db.paging(search.getPageNo(), search.getPageSize()).query());
+        return result;
+    }
+
+    @Method(value = "删除", status = MethodStatus.COMPLETE)
+    public void delete(@Parameter(value = "ID", required = true) String id) {
+        DB.use().eq(User::getId, id).delete();
     }
 }
 ```
 
-完整服务模板见 `assets/service-template.java`
+完整模板见 [service-template.java](assets/service-template.java)。
 
-## 常用代码片段
+常用配套模板：
 
-### CRUD基础
-
-```java
-// 新增
-@Method(value = "新增", status = MethodStatus.COMPLETE)
-public void insert(YourEntity entity) {
-    if (C.OBJECT.isEmpty(entity.getId())) {
-        entity.setId(C.TEXT.longId());
-    }
-    DB.use().insert(entity);
-}
-
-// 更新
-@Method(value = "更新", status = MethodStatus.COMPLETE)
-public void update(YourEntity entity) {
-    DB.use().update(entity);
-}
-
-// 删除
-@Method(value = "删除", status = MethodStatus.COMPLETE)
-public void delete(String id) {
-    DB.use().eq(YourEntity::getId, id).delete();
-}
-
-// 查询
-@Method(value = "查询", status = MethodStatus.COMPLETE)
-@ReturnData(type = YourEntity.class)
-public DataList<YourEntity> find(Search search) {
-    var db = DB.use()
-        .eq(YourEntity::getField, search.getValue(), C.OBJECT.isEmpty(search.getValue()))
-        .iLike(List.of(YourEntity::getName), "%" + search.getKeyword() + "%",
-               C.OBJECT.isEmpty(search.getKeyword()));
-    var dataList = new DataList<YourEntity>();
-    if (search.getPageNo() != -1) {
-        dataList.setTotal(db.count());
-    }
-    dataList.setList(db.paging(search.getPageNo(), search.getPageSize()).query());
-    return dataList;
-}
-```
-
-### 服务间调用
-
-```java
-// 调用其他服务
-var json = ClientStub.send(
-    "/service-name/ServiceClass/methodName",
-    new RequestBody(),
-    C.JSON.toJson(params)
-);
-Result result = C.JSON.fromJson(json, Result.class);
-```
-
-## 参考文档
-
-详细文档按需查阅：
-
-| 文档 | 内容 |
-|------|------|
-| [项目结构](references/project-structure.md) | 目录组织、包命名规范、类命名规则 |
-| [实体定义](references/entity-definition.md) | @Entity/@Field注解、表实体、视图实体、参数实体 |
-| [注解详解](references/method-annotation.md) | @Method/@Parameter/@ReturnData注解完整说明 |
-| [数据库操作](references/database-operations.md) | MainDB CRUD、事务管理、时序数据库、表管理 |
-| [缓存消息](references/cache-mq-operations.md) | C.CACHE缓存、C.MQ消息队列、C.PUSH推送 |
-| [消息订阅](references/subscribe-message.md) | @Subscribe订阅、数据同步、消息处理最佳实践 |
-| [文件时间](references/file-time-operations.md) | C.FILE上传下载、Excel导入导出、C.TIME时间处理 |
-| [常用工具](references/common-tools.md) | C.CONFIG/JSON/LOG/HTTP/ASYNC/MAIL/TEXT/OBJECT/DATA/TREE/MATH/GEO |
-| [内部服务](references/interior-services.md) | PersonService、SerialNumberService、AttachmentService 等 |
-| [配置系统](references/configuration.md) | C.CONFIG使用、YAML配置、环境变量、@EnvKey注解 |
-| [枚举常量](references/enums-constants.md) | MethodStatus、MethodNature、ServerName、自定义常量 |
-| [异常处理](references/exception-response.md) | AppRuntimeException、异常处理模式、错误码定义 |
-| [数据传输](references/data-transfer-objects.md) | RequestBody、DataList、Search、自定义DTO |
-
-## 开发规范
-
-1. **包结构**: 所有服务类必须放在`service`包下
-2. **作者信息**: 服务作者统一填写自己的名字
-3. **方法注释**: 使用中文描述
-4. **日志输出**: 使用C.LOG输出，不在方法内使用System.out
-5. **异常处理**: 使用`AppRuntimeException`抛出业务异常
-6. **ID生成**: 使用`C.TEXT.shortId()`或`C.TEXT.longId()`
-7. **判空操作**: 使用`C.OBJECT.isEmpty()`和`C.OBJECT.isNotEmpty()`
-8. **条件跳过**: MainDB条件第三个参数控制是否生效
-9. **时间验证**: 涉及时间范围查询时使用`C.TIME.validYearTimestamp()`
-10. **敏感数据**: 登录、密码等接口使用`sensitiveData = true`
-
-## URL路径规则
-
-服务方法访问路径：
-```
-/{服务名}/{Service类名去掉Service}/{方法名}
-```
-
-示例：
-- 服务：`@Service(value = "用户服务")` 的 `UserService.getUser()`
-- 路径：`/user-center/User/getUser`
+- [entity-template.java](assets/entity-template.java)
+- [base-search-template.java](assets/base-search-template.java)
+- [search-template.java](assets/search-template.java)
+- [request-dto-template.java](assets/request-dto-template.java)
+- [view-template.java](assets/view-template.java)
+- [common.yml](assets/common.yml)
+- [your-service.yml](assets/your-service.yml)

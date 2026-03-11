@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cloudless 服务开发"
+  short_description: "创建、修正并排查 Cloudless 微服务代码"
+  default_prompt: "使用 $cloudless-service 创建或修正一个符合 Cloudless common 框架约束的 Service、实体类或 Search/DTO/View。"

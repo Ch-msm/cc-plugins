@@ -1,0 +1,28 @@
+# 业务服务配置模板。
+# 对应 Config.load("common", "your-service") 中的 your-service.yml。
+
+server:
+  # 服务英文名，会进入最终 URL：/{server.name}/{servicePath}/{method}
+  name: your-service
+  # 服务中文名，用于日志和展示。
+  alisa: 示例服务
+  # 服务监听端口。
+  port: 9015
+  # 一般业务项目不需要手写 package，按 App.class 所在根包即可。
+  # package: com.szigc.xxx
+
+# 这里放业务自己的配置。
+app:
+  debug: false
+  export:
+    temp_dir: /tmp/your-service
+
+third_party:
+  sms:
+    base_url: https://sms.example.com
+    app_id: your-app-id
+    app_key: your-app-key
+
+feature:
+  enable_import: true
+  enable_export: true

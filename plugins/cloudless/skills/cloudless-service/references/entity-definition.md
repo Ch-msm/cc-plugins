@@ -1,594 +1,203 @@
-# Cloudless 实体类定义完整指南
+# 实体定义
 
-## 目录
+## `@Entity`
 
-- [@Entity 注解](#entity-注解)
-- [@Field 注解](#field-注解)
-- [表实体定义](#表实体定义)
-- [视图实体定义](#视图实体定义)
-- [参数实体定义](#参数实体定义)
-- [字段类型映射](#字段类型映射)
-- [实体类最佳实践](#实体类最佳实践)
-
----
-
-## @Entity 注解
-
-标记类为数据库表实体。
+`@Entity` 用于标记实体类。它既可以表示数据库表实体，也可以表示接口参数或返回对象。
 
 ```java
 @Entity(
-    value = "表名",           // 表名（必填）
-    logicDelete = true        // 是否逻辑删除（默认true）
+    value = "用户",
+    logicDelete = true,
+    tableNamePrefix = "",
+    tableName = ""
 )
-public class YourEntity { }
+public class User {
+}
 ```
 
-### 属性说明
+字段说明：
 
-| 属性 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| value | String | 是 | - | 数据库表名 |
-| logicDelete | boolean | 否 | true | 是否使用逻辑删除 |
+- `value`：实体说明
+- `logicDelete`：是否逻辑删除，默认 `true`
+- `tableNamePrefix`：表名前缀
+- `tableName`：自定义表名
 
-### logicDelete 说明
+说明：
 
-- `true`: 启用逻辑删除，删除时只标记 `deleteTime` 字段
-- `false`: 物理删除，直接从数据库删除记录
+- 做数据库持久化的类建议加 `@Entity`
+- 作为接口单实体参数的 DTO 也建议加 `@Entity`
+- 包名是否多层级不会改变这个要求
+- 推荐表实体类名直接使用业务名本身，例如 `User`、`Order`
+- 默认表名只看类名，不看包层级；`entity.table.user.User` 和 `entity.table.admin.User` 都会先按 `User -> user` 处理
+- 如果复杂项目里不同业务域可能出现同名实体，应显式使用 `tableNamePrefix` 或 `tableName`
 
----
+表名策略：
 
-## @Field 注解
+1. 默认情况下：表名由类名转下划线生成，例如 `User -> user`
+2. 如果设置了 `tableNamePrefix = "user"`：表名会变成 `user_user`
+3. 如果设置了 `tableName = "biz_user"`：直接使用这个表名
+4. 如果当前是单库模式，框架还会在前面再加一层服务名前缀
 
-标记实体类字段，映射到数据库列。
+建议：
+
+- 同一个服务里只是包层级变深，不要因为“目录分组”就滥用 `tableNamePrefix`
+- 表实体类名优先保持简洁，例如 `User`、`Order`，通常这样默认表名就已经是你想要的 `user`、`order`
+- 只有在同一服务内需要区分同名实体、或你希望按业务域给数据库表分组时，再使用 `tableNamePrefix`
+- 需要完全可控的命名时，直接使用 `tableName`
+
+## `@Field`
 
 ```java
 @Field(
-    value = "字段说明",     // 必填
-    primary = false,       // 是否主键
-    required = false,      // 是否必填
-    length = 255,          // 字段长度
-    check = "",            // 数据校验规则
-    sample = "",           // 示例值
-    defaultValue = ""      // 默认值
+    value = "字段说明",
+    length = 255,
+    sample = "示例值",
+    required = false,
+    defaultValue = "",
+    check = "",
+    primaryKey = false,
+    autoIncrement = false,
+    ignore = false,
+    fieldIgnore = false
 )
-private String field;
+private String name;
 ```
 
-### 属性说明
+真实属性：
 
-| 属性 | 类型 | 必填 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| value | String | 是 | - | 字段说明 |
-| primary | boolean | 否 | false | 是否主键 |
-| required | boolean | 否 | false | 是否必填 |
-| length | int | 否 | 255 | 字段长度（-1表示TEXT） |
-| check | String | 否 | "" | 数据校验规则 |
-| sample | String | 否 | "" | 示例值 |
-| defaultValue | String | 否 | "" | 默认值 |
+- `value`
+- `length`
+- `sample`
+- `required`
+- `defaultValue`
+- `check`
+- `primaryKey`
+- `autoIncrement`
+- `ignore`
+- `fieldIgnore`
 
-### check 校验规则
+注意：
 
-使用 `|` 分隔多个允许值：
+- 没有 `primary`
+- `ignore = true` 表示数据库层忽略该字段
+- `fieldIgnore = true` 主要用于导入导出场景忽略该字段
+- 包名是否多层级不会改变这个要求，表实体字段照样要写 `@Field`
 
-```java
-@Field(value = "状态", check = "0|1|2", sample = "0:禁用\|1:启用\|2:删除")
-private int status;
-```
-
----
-
-## 表实体定义
-
-### 基础表实体
+## 表实体
 
 ```java
 @Data
 @Entity(value = "用户", logicDelete = true)
 public class User {
-    @Field(value = "主键", primary = true)
+    @Field(value = "ID", primaryKey = true)
     private String id;
 
-    @Field(value = "用户名", required = true, length = 50)
-    private String username;
-
-    @Field(value = "密码", required = true, length = 100)
-    private String password;
-
-    @Field(value = "姓名", length = 100)
+    @Field(value = "姓名", required = true, length = 100)
     private String name;
 
     @Field(value = "手机号", length = 20)
     private String phone;
 
-    @Field(value = "邮箱", length = 100)
-    private String email;
-
-    @Field(value = "状态", check = "0|1", sample = "0:禁用\|1:启用", defaultValue = "1")
+    @Field(value = "状态", defaultValue = "1", check = "0|1")
     private int status = 1;
 
-    @Field(value = "排序", defaultValue = "0")
-    private int sortOrder = 0;
-
-    @Field(value = "创建时间")
+    @Field("创建时间")
     private long createTime;
 
-    @Field(value = "更新时间")
+    @Field("更新时间")
     private long updateTime;
 }
 ```
 
-### 带内部类的表实体
+## 自增主键
 
 ```java
 @Data
-@Entity(value = "角色", logicDelete = true)
-public class Role {
-    @Field(value = "主键", primary = true)
-    private String id;
-
-    @Field(value = "角色名称", required = true, length = 50)
-    private String name;
-
-    @Field(value = "角色编码", length = 50)
-    private String code;
-
-    // 内部类 - 角色权限关联
-    @Entity("角色权限关联")
-    public static class Power {
-        @Field(value = "角色ID", primary = true)
-        private String roleId;
-
-        @Field(value = "权限ID", primary = true)
-        private String powerId;
-    }
-
-    // 内部类 - 角色用户关联
-    @Entity("角色用户关联")
-    public static class User {
-        @Field(value = "角色ID", primary = true)
-        private String roleId;
-
-        @Field(value = "用户ID", primary = true)
-        private String userId;
-    }
+@Entity(value = "审批过程", logicDelete = false)
+public class ApprovalProcess {
+    @Field(value = "ID", primaryKey = true, autoIncrement = true)
+    private int id;
 }
 ```
 
-### 时序数据实体
+## 忽略字段
+
+适合把数据库中存储的 JSON 字段映射成运行时对象：
 
 ```java
 @Data
-@Entity(value = "测点数据", logicDelete = false)
-public class PointData {
-    @Field(value = "测点ID")
-    private String pointId;
+@Entity(value = "审批过程", logicDelete = false)
+public class ApprovalProcess {
+    @Field(value = "审批人信息", length = -1)
+    private String approveJson;
 
-    @Field(value = "时间", primary = true)
-    private long time;
-
-    @Field(value = "数值")
-    private double value;
-
-    @Field(value = "数据质量")
-    private int quality;
+    @Field(value = "审批人", ignore = true)
+    private UserBase approve;
 }
 ```
 
----
+## 参数实体
 
-## 视图实体定义
+单实体参数、搜索参数、导入参数都建议加 `@Entity` 和 `@Field`：
 
-视图实体用于返回给前端的数据，不直接映射数据库表。
-
-### 基础视图实体
+接口入参优先复用表实体。只有接口结构与表实体不匹配，或者需要补充额外字段时，才定义参数实体；如果只是多几个字段，优先继承表实体再扩展。
 
 ```java
 @Data
-public class UserV1 extends User {
-    @Field(value = "角色列表")
-    private List<Role> roles = new ArrayList<>();
-
-    @Field(value = "权限数量")
-    private int powerCount;
-
-    @Field(value = "最后登录时间")
-    private String lastLoginTimeStr;
-}
-```
-
-### 组合视图实体
-
-```java
-@Data
-public class UserRoleView {
-    @Field(value = "用户ID")
-    private String userId;
-
-    @Field(value = "用户名")
-    private String username;
-
-    @Field(value = "姓名")
-    private String name;
-
-    @Field(value = "角色列表")
-    private List<Role> roles;
-
-    @Field(value = "权限列表")
-    private List<Power> powers;
-
-    @Field(value = "所属组织")
-    private Organization organization;
-}
-```
-
-### 统计视图实体
-
-```java
-@Data
-public class StatisticsData {
-    @Field(value = "时间/标签")
-    private String name;
-
-    @Field(value = "数量")
-    private long count;
-
-    @Field(value = "平均值")
-    private double avg;
-
-    @Field(value = "最大值")
-    private double max;
-
-    @Field(value = "最小值")
-    private double min;
-}
-```
-
----
-
-## 参数实体定义
-
-### 基础搜索参数
-
-```java
-@Data
-@Entity("查询条件基类")
-public class BaseSearch {
-    @Field(value = "分页:第几页", defaultValue = "1")
+@Entity("用户查询条件")
+public class UserSearch {
+    @Field(value = "页码", defaultValue = "1")
     private int pageNo = 1;
 
-    @Field(value = "分页:每页条数", defaultValue = "20")
+    @Field(value = "每页条数", defaultValue = "20")
     private int pageSize = 20;
-}
-```
 
-### 完整搜索参数
-
-```java
-@Data
-@Entity("查询条件")
-public class Search extends BaseSearch {
-    @Field(value = "关键字", sample = "用户名/姓名/手机号")
+    @Field("关键字")
     private String keyword;
 
-    @Field(value = "ID集合")
-    private List<String> ids;
-
-    @Field(value = "状态", sample = "0:禁用\|1:启用")
-    private List<Integer> status;
-
-    @Field(value = "角色ID")
-    private String roleId;
-
-    @Field(value = "组织ID")
-    private String organizationId;
-
-    @Field(value = "开始时间")
-    private long startTime;
-
-    @Field(value = "结束时间")
-    private long endTime;
+    @Field("部门ID")
+    private String departmentId;
 }
 ```
 
-### 操作参数
+## 视图实体
+
+接口返回值优先直接使用表实体。只有返回结构与表实体不匹配，或者需要补充聚合字段、格式化字段、关联字段时，才定义 `view`；如果只是多几个字段，优先继承表实体再扩展。
+
+聚合返回值也可以加 `@Field`，便于接口元数据表达：
 
 ```java
 @Data
-@Entity("批量操作参数")
-public class BatchOperation {
-    @Field(value = "ID集合", required = true)
-    private List<String> ids;
+@EqualsAndHashCode(callSuper = true)
+@Entity("用户视图")
+public class UserView extends User {
 
-    @Field(value = "操作类型", required = true, check = "1|2|3",
-           sample = "1:启用\|2:禁用\|3:删除")
-    private int operation;
+    @Field("附件列表")
+    private List<Attachment> attachmentList;
 }
 ```
 
-### 导入导出参数
+## 导出实体
+
+Excel 导出项使用 `ExportItem`：
 
 ```java
-@Data
-@Entity("导出项")
-public class ExportItem {
-    @Field(value = "字段名", required = true)
-    private String field;
-
-    @Field(value = "显示名称", required = true)
-    private String label;
-
-    @Field(value = "宽度", defaultValue = "200")
-    private int width = 200;
-}
-
-@Data
-@Entity("导出参数")
-public class ExportParam {
-    @Field(value = "查询条件")
-    private Search search;
-
-    @Field(value = "导出项", required = true)
-    private List<ExportItem> exportItems;
-
-    @Field(value = "文件名", required = true)
-    private String fileName;
-}
+List<ExportItem> items = List.of(
+    new ExportItem("name", "姓名", false, false),
+    new ExportItem("attachmentList", "附件", false, true)
+);
 ```
 
----
+## 推荐做法
 
-## 字段类型映射
+1. 接口参数和返回值优先复用表实体；只有结构不匹配时才新增参数实体或视图实体
+2. 参数实体、视图实体如果只是扩展少量字段，优先继承表实体，避免重复定义相同字段
+3. 主键使用 `primaryKey = true`
+4. 需要在数据库中忽略的运行时字段使用 `ignore = true`
+5. 需要默认值和枚举校验时优先写在 `@Field`
 
-### Java类型到数据库类型映射
+配套模板：
 
-| Java类型 | 数据库类型 | 说明 |
-|---------|-----------|------|
-| String | VARCHAR(length) | 字符串 |
-| String (length=-1) | TEXT | 长文本 |
-| int / Integer | INT | 整数 |
-| long / Long | BIGINT | 长整数 |
-| double / Double | DOUBLE | 浮点数 |
-| boolean / Boolean | BOOLEAN | 布尔值 |
-| java.util.Date | TIMESTAMP | 日期时间 |
-| java.time.LocalDateTime | TIMESTAMP | 日期时间 |
-| java.time.LocalDate | DATE | 日期 |
-| List<String> | TEXT | 存储为JSON数组 |
-
-### 特殊字段
-
-```java
-// 主键
-@Field(value = "主键", primary = true)
-private String id;
-
-// 必填字段
-@Field(value = "名称", required = true)
-private String name;
-
-// 枚举字段
-@Field(value = "类型", check = "1|2|3", sample = "1:类型A\|2:类型B\|3:类型C")
-private int type;
-
-// 长文本
-@Field(value = "内容", length = -1)
-private String content;
-
-// 时间戳
-@Field(value = "创建时间")
-private long createTime;
-```
-
----
-
-## 实体类最佳实践
-
-### 1. 使用Lombok简化代码
-
-```java
-@Data                    // 自动生成getter/setter
-@Entity(value = "表名")
-public class YourEntity {
-    // 字段定义
-}
-```
-
-### 2. 实体类继承
-
-```java
-// 基础实体
-@Data
-@Entity("基础实体")
-public abstract class BaseEntity {
-    @Field(value = "创建时间")
-    private long createTime;
-
-    @Field(value = "更新时间")
-    private long updateTime;
-}
-
-// 具体实体
-@Data
-@Entity(value = "用户", logicDelete = true)
-public class User extends BaseEntity {
-    @Field(value = "主键", primary = true)
-    private String id;
-
-    @Field(value = "用户名")
-    private String username;
-}
-```
-
-### 3. 字段默认值
-
-```java
-@Data
-@Entity(value = "配置", logicDelete = false)
-public class Config {
-    @Field(value = "配置键", primary = true)
-    private String key;
-
-    @Field(value = "配置值")
-    private String value;
-
-    @Field(value = "是否启用", defaultValue = "true")
-    private boolean enabled = true;
-
-    @Field(value = "排序", defaultValue = "0")
-    private int sortOrder = 0;
-}
-```
-
-### 4. 枚举映射
-
-```java
-public enum UserStatus {
-    DISABLED(0, "禁用"),
-    ENABLED(1, "启用"),
-    DELETED(2, "删除");
-
-    private final int code;
-    private final String desc;
-
-    UserStatus(int code, String desc) {
-        this.code = code;
-        this.desc = desc;
-    }
-}
-
-// 在实体中使用
-@Field(value = "状态", check = "0|1|2", sample = "0:禁用\|1:启用\|2:删除")
-private int status;
-```
-
-### 5. 日期时间处理
-
-```java
-@Data
-@Entity(value = "事件", logicDelete = true)
-public class Event {
-    @Field(value = "主键", primary = true)
-    private String id;
-
-    // 使用时间戳（推荐）
-    @Field(value = "事件时间")
-    private long eventTime;
-
-    // 或使用LocalDateTime
-    @Field(value = "创建时间")
-    private LocalDateTime createTime;
-
-    // 方法：转换时间戳为字符串
-    public String getEventTimeStr() {
-        return C.TIME.toDateTimeString(eventTime);
-    }
-}
-```
-
-### 6. 关联数据处理
-
-```java
-@Data
-@Entity(value = "订单", logicDelete = true)
-public class Order {
-    @Field(value = "主键", primary = true)
-    private String id;
-
-    @Field(value = "用户ID")
-    private String userId;
-
-    // 不在数据库存储，通过查询填充
-    @Transient
-    private User user;
-
-    // 关联的订单项
-    @Transient
-    private List<OrderItem> items;
-}
-
-// 查询后填充关联数据
-var orders = DB.use().query();
-var userIds = orders.stream().map(Order::getUserId).toList();
-var users = userDB.use().in(User::getId, userIds).query();
-var userMap = C.DATA.toMap(users, User::getId);
-
-orders.forEach(order -> {
-    order.setUser(userMap.get(order.getUserId()));
-});
-```
-
----
-
-## 实体类注解完整示例
-
-```java
-package com.szigc.xxx.entity.table;
-
-import com.szigc.common.annotation.Entity;
-import com.szigc.common.annotation.Field;
-import lombok.Data;
-
-/**
- * 用户实体
- */
-@Data
-@Entity(value = "用户", logicDelete = true)
-public class User {
-    // 主键
-    @Field(value = "主键", primary = true)
-    private String id;
-
-    // 基本信息
-    @Field(value = "用户名", required = true, length = 50)
-    private String username;
-
-    @Field(value = "密码", required = true, length = 100)
-    private String password;
-
-    @Field(value = "姓名", length = 100)
-    private String name;
-
-    @Field(value = "手机号", length = 20)
-    private String phone;
-
-    @Field(value = "邮箱", length = 100)
-    private String email;
-
-    // 状态字段
-    @Field(value = "状态", check = "0|1", sample = "0:禁用\|1:启用", defaultValue = "1")
-    private int status = 1;
-
-    @Field(value = "排序", defaultValue = "0")
-    private int sortOrder = 0;
-
-    // 时间字段
-    @Field(value = "创建时间")
-    private long createTime;
-
-    @Field(value = "更新时间")
-    private long updateTime;
-
-    @Field(value = "删除时间")
-    private Long deleteTime;
-
-    // 关联表 - 用户角色
-    @Entity("用户角色关联")
-    public static class Role {
-        @Field(value = "用户ID", primary = true)
-        private String userId;
-
-        @Field(value = "角色ID", primary = true)
-        private String roleId;
-    }
-
-    // 关联表 - 用户组织
-    @Entity("用户组织关联")
-    public static class Organization {
-        @Field(value = "用户ID", primary = true)
-        private String userId;
-
-        @Field(value = "组织ID", primary = true)
-        private String organizationId;
-    }
-}
-```
+- [entity-template.java](../assets/entity-template.java)
+- [request-dto-template.java](../assets/request-dto-template.java)
+- [view-template.java](../assets/view-template.java)
